@@ -19,6 +19,7 @@ parser.add_argument('-t', '--token', help='OAuth access token (default token.pic
 parser.add_argument('-d', '--folder', dest='folder_id', help='Folder identifier (or folders separated by ,) for uploading or listing')
 parser.add_argument('-fn', '--filename', help='File name to upload/download')
 parser.add_argument('-f', '--file', dest='file_id', help='File identifier to download')
+parser.add_argument('-D', '--drive', dest='drive_id', help='Drive identifier')
 
 args = parser.parse_args()
 
@@ -60,7 +61,9 @@ class gdrive():
 
 
     def list_files(self, folder_id):
-        result = self._service.files().list(fields="files(id, name)", q="'{}' in parents".format(folder_id)).execute()
+        result = self._service.files().list(fields="files(id, name)", q="'{}' in parents".format(folder_id),
+                    pageSize=1000, teamDriveId=args.drive_id, corpora='drive' if args.drive_id else None,
+                    supportsTeamDrives=True, supportsAllDrives=True, includeItemsFromAllDrives=True).execute()
         files = result.get('files', [])
         return files
 
@@ -76,15 +79,16 @@ class gdrive():
 
     def upload_file(self, filename, folder_id):
         metadata = {'name': filename}
+        if args.drive_id: metadata['driveId'] = args.drive_id
         if folder_id: metadata['parents'] = folder_id.split(',')
         media = MediaFileUpload(filename, chunksize=1024*1024, resumable=True)
-        file = self._service.files().create(body=metadata, media_body=media, fields='id, webViewLink').execute()
+        file = self._service.files().create(body=metadata, media_body=media, fields='id, webViewLink', supportsTeamDrives=True, supportsAllDrives=True).execute()
         return file
 
 
     def set_public(self, file_id):
         metadata = {'role': 'reader', 'type': 'anyone'}
-        permission = self._service.permissions().create(fileId=file_id, body=metadata).execute()
+        permission = self._service.permissions().create(fileId=file_id, body=metadata, supportsTeamDrives=True, supportsAllDrives=True).execute()
         return permission
 
 
