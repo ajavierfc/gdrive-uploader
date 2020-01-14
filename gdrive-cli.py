@@ -14,11 +14,11 @@ from google.auth.transport.requests import Request
 # Arguments
 parser = argparse.ArgumentParser(description=sys.argv[0])
 parser.add_argument('action', choices=['list', 'upload', 'download'], help='Action to perform', default='upload')
-parser.add_argument('-d', '--folder', dest='folder', help='Destination folder id (or folders separated by ,)')
 parser.add_argument('-c', '--credentials', dest='credentials', help='Credentials file (default credentials.json)', default='credentials.json')
-parser.add_argument('-t', '--token', dest='token', help='OAuth access token (default token.pickle)', default='token.pickle')
-parser.add_argument('-f', '--filename', help='File name to upload/download')
-parser.add_argument('-i', '--fileid', help='File identifier to download')
+parser.add_argument('-t', '--token', help='OAuth access token (default token.pickle)', default='token.pickle')
+parser.add_argument('-d', '--folder', dest='folder_id', help='Folder identifier (or folders separated by ,) for uploading or listing')
+parser.add_argument('-fn', '--filename', help='File name to upload/download')
+parser.add_argument('-f', '--file', dest='file_id', help='File identifier to download')
 
 args = parser.parse_args()
 
@@ -59,8 +59,8 @@ class gdrive():
         pass
 
 
-    def list_files(self, folder):
-        result = self._service.files().list(fields="files(id, name)", q="'{}' in parents".format(folder)).execute()
+    def list_files(self, folder_id):
+        result = self._service.files().list(fields="files(id, name)", q="'{}' in parents".format(folder_id)).execute()
         files = result.get('files', [])
         return files
 
@@ -74,9 +74,9 @@ class gdrive():
             status, done = downloader.next_chunk()
 
 
-    def upload_file(self, filename):
+    def upload_file(self, filename, folder_id):
         metadata = {'name': filename}
-        if args.folder: metadata['parents'] = args.folder.split(',')
+        if folder_id: metadata['parents'] = folder_id.split(',')
         media = MediaFileUpload(filename, chunksize=1024*1024, resumable=True)
         file = self._service.files().create(body=metadata, media_body=media, fields='id, webViewLink').execute()
         return file
@@ -88,8 +88,8 @@ class gdrive():
         return permission
 
 
-    def upload_public_file(self, filename):
-        file = self.upload_file(filename)
+    def upload_public_file(self, filename, folder_id):
+        file = self.upload_file(filename, folder_id)
         self.set_public(file['id'])
         return file
 
@@ -98,15 +98,15 @@ if __name__ == '__main__':
     with gdrive() as gdrive:
         if "upload" == args.action:
             print("filename:" + args.filename)
-            file = gdrive.upload_public_file(args.filename)
+            file = gdrive.upload_public_file(args.filename, args.folder_id)
             print("link:{id}\nhash:{webViewLink}".format(**file))
 
         elif "download" == args.action:
-            print("hash:" + args.fileid)
-            gdrive.download_file(args.fileid, args.filename)
+            print("hash:" + args.file_id)
+            gdrive.download_file(args.file_id, args.filename)
             print("filename:" + args.filename)
 
         elif "list" == args.action:
-            files = gdrive.list_files(args.folder)
+            files = gdrive.list_files(args.folder_id)
             for f in files:
                 print("{id}\t{name}".format(**f))
