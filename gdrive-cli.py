@@ -62,7 +62,7 @@ class gdrive():
     def list_files(self, folder):
         result = self._service.files().list(fields="files(id, name)", q="'{}' in parents".format(folder)).execute()
         files = result.get('files', [])
-        for f in files: print("{id}\t{name}".format(**f))
+        return files
 
 
     def download_file(self, file_id, filename):
@@ -70,10 +70,8 @@ class gdrive():
         request = self._service.files().get_media(fileId=file_id)
         downloader = MediaIoBaseDownload(fh, request)
         done = False
-        print("Downloading " + filename)
         while done is False:
             status, done = downloader.next_chunk()
-        print(filename + " downloaded")
 
 
     def upload_file(self, filename):
@@ -102,7 +100,13 @@ if __name__ == '__main__':
             print("filename:" + args.filename)
             file = gdrive.upload_public_file(args.filename)
             print("link:{id}\nhash:{webViewLink}".format(**file))
+
         elif "download" == args.action:
+            print("Downloading " + args.fileid)
             gdrive.download_file(args.fileid, args.filename)
+            print(args.filename + " downloaded")
+
         elif "list" == args.action:
-            gdrive.list_files(args.folder)
+            files = gdrive.list_files(args.folder)
+            for f in files:
+                print("{id}\t{name}".format(**f))
