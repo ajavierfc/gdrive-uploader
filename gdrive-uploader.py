@@ -73,4 +73,4 @@ class gdrive():
 if __name__ == '__main__':
     print("uploading:" + args.filename)
     file = gdrive().upload_public_file(args.filename)
-    print("link:{0}\nhash:{1}".format(file.get('webViewLink'), file.get('id')))
+    print("link:{id}\nhash:{webViewLink}".format(**file))
