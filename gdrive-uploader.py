@@ -19,11 +19,9 @@ parser.add_argument('filename', help='File to upload')
 
 args = parser.parse_args()
 
-
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/drive.metadata',
-          'https://www.googleapis.com/auth/drive.file',
-         ]
+          'https://www.googleapis.com/auth/drive.file']
 
 
 class gdrive():
@@ -71,6 +69,6 @@ class gdrive():
 
 
 if __name__ == '__main__':
-    print("uploading:" + args.filename)
+    print("filename:" + args.filename)
     file = gdrive().upload_public_file(args.filename)
     print("link:{id}\nhash:{webViewLink}".format(**file))
