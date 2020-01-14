@@ -73,7 +73,7 @@ class gdrive():
         print("Downloading " + filename)
         while done is False:
             status, done = downloader.next_chunk()
-        print("\n{} downloaded".format(filename))
+        print(filename + " downloaded")
 
 
     def upload_file(self, filename):
