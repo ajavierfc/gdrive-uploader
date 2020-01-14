@@ -14,11 +14,11 @@ from google.auth.transport.requests import Request
 # Arguments
 parser = argparse.ArgumentParser(description=sys.argv[0])
 parser.add_argument('action', choices=['list', 'upload', 'download'], help='Action to perform', default='upload')
-parser.add_argument('--folder', dest='folder', help='Destination folder id (or folders separated by ,)')
-parser.add_argument('--credentials', dest='credentials', help='Credentials file', default='credentials.json')
-parser.add_argument('--token', dest='token', help='OAuth access token', default='token.pickle')
-parser.add_argument('--filename', help='File to upload')
-parser.add_argument('--fileid', help='File to upload')
+parser.add_argument('-d', '--folder', dest='folder', help='Destination folder id (or folders separated by ,)')
+parser.add_argument('-c', '--credentials', dest='credentials', help='Credentials file (default credentials.json)', default='credentials.json')
+parser.add_argument('-t', '--token', dest='token', help='OAuth access token (default token.pickle)', default='token.pickle')
+parser.add_argument('-f', '--filename', help='File name to upload/download')
+parser.add_argument('-i', '--fileid', help='File identifier to download')
 
 args = parser.parse_args()
 
@@ -102,9 +102,9 @@ if __name__ == '__main__':
             print("link:{id}\nhash:{webViewLink}".format(**file))
 
         elif "download" == args.action:
-            print("Downloading " + args.fileid)
+            print("hash:" + args.fileid)
             gdrive.download_file(args.fileid, args.filename)
-            print(args.filename + " downloaded")
+            print("filename:" + args.filename)
 
         elif "list" == args.action:
             files = gdrive.list_files(args.folder)
