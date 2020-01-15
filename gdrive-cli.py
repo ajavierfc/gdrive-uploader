@@ -13,12 +13,12 @@ from google.auth.transport.requests import Request
 
 # Arguments
 parser = argparse.ArgumentParser(description=sys.argv[0])
-parser.add_argument('action', choices=['list', 'upload', 'download'], help='Action to perform', default='upload')
+parser.add_argument('action', choices=['nothing', 'list', 'upload', 'download'], help='Action to perform')
 parser.add_argument('-c', '--credentials', dest='credentials', help='Credentials file (default credentials.json)', default='credentials.json')
 parser.add_argument('-t', '--token', help='OAuth access token (default token.pickle)', default='token.pickle')
 parser.add_argument('-d', '--folder', dest='folder_id', help='Folder identifier (or folders separated by ,) for uploading or listing')
-parser.add_argument('-fn', '--filename', help='File name to upload/download')
 parser.add_argument('-f', '--file', dest='file_id', help='File identifier to download')
+parser.add_argument('-fn', '--filename', help='File name to upload/download')
 parser.add_argument('-D', '--drive', dest='drive_id', help='Drive identifier')
 
 args = parser.parse_args()
@@ -28,7 +28,7 @@ SCOPES = ['https://www.googleapis.com/auth/drive.metadata',
           'https://www.googleapis.com/auth/drive.file']
 
 
-class gdrive():
+class GoogleDrive():
 
     def __init__(self):
         creds = None
@@ -51,14 +51,11 @@ class gdrive():
 
         self._service = build('drive', 'v3', credentials=creds)
 
-
     def __enter__(self):
         return self
 
-
     def __exit__(self, type, value, tb):
         pass
-
 
     def list_files(self, folder_id):
         result = self._service.files().list(fields="files(id, name)", q="'{}' in parents".format(folder_id),
@@ -66,7 +63,6 @@ class gdrive():
                     supportsTeamDrives=True, supportsAllDrives=True, includeItemsFromAllDrives=True).execute()
         files = result.get('files', [])
         return files
-
 
     def download_file(self, file_id, filename):
         fh = io.FileIO(filename, 'wb')
@@ -76,21 +72,20 @@ class gdrive():
         while done is False:
             status, done = downloader.next_chunk()
 
-
     def upload_file(self, filename, folder_id):
         metadata = {'name': filename}
         if args.drive_id: metadata['driveId'] = args.drive_id
         if folder_id: metadata['parents'] = folder_id.split(',')
         media = MediaFileUpload(filename, chunksize=1024*1024, resumable=True)
-        file = self._service.files().create(body=metadata, media_body=media, fields='id, webViewLink', supportsTeamDrives=True, supportsAllDrives=True).execute()
+        file = self._service.files().create(body=metadata, media_body=media, fields='id, webViewLink',
+                    supportsTeamDrives=True, supportsAllDrives=True).execute()
         return file
-
 
     def set_public(self, file_id):
         metadata = {'role': 'reader', 'type': 'anyone'}
-        permission = self._service.permissions().create(fileId=file_id, body=metadata, supportsTeamDrives=True, supportsAllDrives=True).execute()
+        permission = self._service.permissions().create(fileId=file_id, body=metadata,
+                        supportsTeamDrives=True, supportsAllDrives=True).execute()
         return permission
-
 
     def upload_public_file(self, filename, folder_id):
         file = self.upload_file(filename, folder_id)
@@ -99,18 +94,18 @@ class gdrive():
 
 
 if __name__ == '__main__':
-    with gdrive() as gdrive:
+    with GoogleDrive() as drive:
         if "upload" == args.action:
             print("filename:" + args.filename)
-            file = gdrive.upload_public_file(args.filename, args.folder_id)
+            file = drive.upload_public_file(args.filename, args.folder_id)
             print("link:{id}\nhash:{webViewLink}".format(**file))
 
         elif "download" == args.action:
             print("hash:" + args.file_id)
-            gdrive.download_file(args.file_id, args.filename)
+            drive.download_file(args.file_id, args.filename)
             print("filename:" + args.filename)
 
         elif "list" == args.action:
-            files = gdrive.list_files(args.folder_id)
+            files = drive.list_files(args.folder_id)
             for f in files:
                 print("{id}\t{name}".format(**f))
