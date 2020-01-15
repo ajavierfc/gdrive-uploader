@@ -13,7 +13,7 @@ from google.auth.transport.requests import Request
 
 # Arguments
 parser = argparse.ArgumentParser(description=sys.argv[0])
-parser.add_argument('action', choices=['setup', 'list', 'upload', 'download'], help='Action to perform')
+parser.add_argument('action', choices=['setup', 'list', 'upload', 'download', 'public'], help='Action to perform')
 parser.add_argument('-c', '--credentials', dest='credentials', help='Credentials file (default credentials.json)', default='credentials.json')
 parser.add_argument('-t', '--token', help='OAuth access token (default token.pickle)', default='token.pickle')
 parser.add_argument('-d', '--folder', help='Folder identifier (or folders separated by ,) for uploading or listing')
@@ -24,9 +24,9 @@ parser.add_argument('-D', '--drive', help='Drive identifier')
 args = parser.parse_args()
 
 # If modifying these scopes, delete the file token.pickle.
-SCOPES = ['https://www.googleapis.com/auth/drive.metadata',
-          'https://www.googleapis.com/auth/drive.readonly',
-          'https://www.googleapis.com/auth/drive.file']
+# https://developers.google.com/drive/api/v2/about-auth
+SCOPES = ['https://www.googleapis.com/auth/drive', # allow write permissions to any file and download any files
+          'https://www.googleapis.com/auth/drive.file'] # allow put files
 
 FOLDER = 'application/vnd.google-apps.folder'
 
@@ -118,6 +118,10 @@ if __name__ == '__main__':
                     else:
                         print("file:{id}\t{mimeType}\nfilename:{name}".format(**file))
                         drive.download_file(file['id'], file['name'])
+
+        elif "public" == args.action:
+            drive.set_public(args.file)
+            print(args.file + " is now public")
 
         elif "list" == args.action:
             files = drive.list_files(args.folder)
