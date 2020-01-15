@@ -30,26 +30,28 @@ SCOPES = ['https://www.googleapis.com/auth/drive.metadata',
 
 class GoogleDrive():
 
-    def __init__(self):
+    def __init__(self, credentials_file, token_file, drive_id):
         creds = None
         # The file token.pickle stores the user's access and refresh tokens, and is
         # created automatically when the authorization flow completes for the first
         # time.
-        if os.path.exists(args.token):
-            with open(args.token, 'rb') as token:
+        if os.path.exists(token_file):
+            with open(token_file, 'rb') as token:
                 creds = pickle.load(token)
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(args.credentials, SCOPES)
+                flow = InstalledAppFlow.from_client_secrets_file(credentials_file, SCOPES)
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
-            with open(args.token, 'wb') as token:
+            with open(token_file, 'wb') as token:
                 pickle.dump(creds, token)
 
         self._service = build('drive', 'v3', credentials=creds)
+        self._drive_id = drive_id
+        self._corpora = 'drive' if self._drive_id else None
 
     def __enter__(self):
         return self
@@ -59,7 +61,7 @@ class GoogleDrive():
 
     def list_files(self, folder_id):
         result = self._service.files().list(fields="files(id, name)", q="'{}' in parents".format(folder_id),
-                    pageSize=1000, teamDriveId=args.drive_id, corpora='drive' if args.drive_id else None,
+                    pageSize=1000, teamDriveId=self._drive_id, corpora=self._corpora,
                     supportsTeamDrives=True, supportsAllDrives=True, includeItemsFromAllDrives=True).execute()
         files = result.get('files', [])
         return files
@@ -74,7 +76,7 @@ class GoogleDrive():
 
     def upload_file(self, filename, folder_id):
         metadata = {'name': filename}
-        if args.drive_id: metadata['driveId'] = args.drive_id
+        if self._drive_id: metadata['driveId'] = self._drive_id
         if folder_id: metadata['parents'] = folder_id.split(',')
         media = MediaFileUpload(filename, chunksize=1024*1024, resumable=True)
         file = self._service.files().create(body=metadata, media_body=media, fields='id, webViewLink',
@@ -94,7 +96,7 @@ class GoogleDrive():
 
 
 if __name__ == '__main__':
-    with GoogleDrive() as drive:
+    with GoogleDrive(args.credentials, args.token, args.drive_id) as drive:
         if "upload" == args.action:
             print("filename:" + args.filename)
             file = drive.upload_public_file(args.filename, args.folder_id)
