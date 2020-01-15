@@ -26,7 +26,7 @@ def upload_public_file(drive, filename, folder_id):
 def download_folder(drive, folder_id):
     files = drive.list_files(folder_id)
     for file in files:
-        if FOLDER == file['mimeType']:
+        if drive.is_folder(file):
             print("folder:{id}\t{name}".format(**file))
         else:
             print("file:{id}\t{mimeType}\nfilename:{name}".format(**file))
