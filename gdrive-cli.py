@@ -13,7 +13,7 @@ from google.auth.transport.requests import Request
 
 # Arguments
 parser = argparse.ArgumentParser(description=sys.argv[0])
-parser.add_argument('action', choices=['nothing', 'list', 'upload', 'download'], help='Action to perform')
+parser.add_argument('action', choices=['setup', 'list', 'upload', 'download'], help='Action to perform')
 parser.add_argument('-c', '--credentials', dest='credentials', help='Credentials file (default credentials.json)', default='credentials.json')
 parser.add_argument('-t', '--token', help='OAuth access token (default token.pickle)', default='token.pickle')
 parser.add_argument('-d', '--folder', help='Folder identifier (or folders separated by ,) for uploading or listing')
