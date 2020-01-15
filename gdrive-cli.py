@@ -16,10 +16,10 @@ parser = argparse.ArgumentParser(description=sys.argv[0])
 parser.add_argument('action', choices=['nothing', 'list', 'upload', 'download'], help='Action to perform')
 parser.add_argument('-c', '--credentials', dest='credentials', help='Credentials file (default credentials.json)', default='credentials.json')
 parser.add_argument('-t', '--token', help='OAuth access token (default token.pickle)', default='token.pickle')
-parser.add_argument('-d', '--folder', dest='folder_id', help='Folder identifier (or folders separated by ,) for uploading or listing')
-parser.add_argument('-f', '--file', dest='file_id', help='File identifier to download')
+parser.add_argument('-d', '--folder', help='Folder identifier (or folders separated by ,) for uploading or listing')
+parser.add_argument('-f', '--file', help='File identifier to download')
 parser.add_argument('-fn', '--filename', help='File name to upload/download')
-parser.add_argument('-D', '--drive', dest='drive_id', help='Drive identifier')
+parser.add_argument('-D', '--drive', help='Drive identifier')
 
 args = parser.parse_args()
 
@@ -99,19 +99,19 @@ class GoogleDrive():
 
 
 if __name__ == '__main__':
-    with GoogleDrive(args.credentials, args.token, args.drive_id) as drive:
+    with GoogleDrive(args.credentials, args.token, args.drive) as drive:
         if "upload" == args.action:
             print("filename:" + args.filename)
-            file = drive.upload_public_file(args.filename, args.folder_id)
+            file = drive.upload_public_file(args.filename, args.folder)
             print("file:{id}\nlink:{webViewLink}".format(**file))
 
         elif "download" == args.action:
-            print("file:{}\nfolder:{}".format(args.file_id, args.folder_id))
-            if args.file_id:
-                drive.download_file(args.file_id, args.filename)
+            print("file:{}\nfolder:{}".format(args.file, args.folder))
+            if args.file:
+                drive.download_file(args.file, args.filename)
                 print("filename:" + args.filename)
             else:
-                files = drive.list_files(args.folder_id)
+                files = drive.list_files(args.folder)
                 for file in files:
                     if FOLDER == file['mimeType']:
                         print("folder:{id}\t{name}".format(**file))
@@ -120,6 +120,6 @@ if __name__ == '__main__':
                         drive.download_file(file['id'], file['name'])
 
         elif "list" == args.action:
-            files = drive.list_files(args.folder_id)
+            files = drive.list_files(args.folder)
             for f in files:
                 print("{id}\t{mimeType}\t{name}".format(**f))
