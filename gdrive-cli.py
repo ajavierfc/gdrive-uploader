@@ -28,6 +28,7 @@ SCOPES = ['https://www.googleapis.com/auth/drive.metadata',
           'https://www.googleapis.com/auth/drive.readonly',
           'https://www.googleapis.com/auth/drive.file']
 
+FOLDER = 'application/vnd.google-apps.folder'
 
 class GoogleDrive():
 
@@ -61,7 +62,8 @@ class GoogleDrive():
         pass
 
     def list_files(self, folder_id):
-        result = self._service.files().list(fields="files(id, name)", q="'{}' in parents".format(folder_id),
+        # https://developers.google.com/drive/api/v3/reference/files
+        result = self._service.files().list(fields="files(id, name, mimeType)", q="'{}' in parents".format(folder_id),
                     pageSize=1000, teamDriveId=self._drive_id, corpora=self._corpora,
                     supportsTeamDrives=True, supportsAllDrives=True, includeItemsFromAllDrives=True).execute()
         files = result.get('files', [])
@@ -101,14 +103,23 @@ if __name__ == '__main__':
         if "upload" == args.action:
             print("filename:" + args.filename)
             file = drive.upload_public_file(args.filename, args.folder_id)
-            print("link:{id}\nhash:{webViewLink}".format(**file))
+            print("file:{id}\nlink:{webViewLink}".format(**file))
 
         elif "download" == args.action:
-            print("hash:" + args.file_id)
-            drive.download_file(args.file_id, args.filename)
-            print("filename:" + args.filename)
+            print("file:{}\nfolder:{}".format(args.file_id, args.folder_id))
+            if args.file_id:
+                drive.download_file(args.file_id, args.filename)
+                print("filename:" + args.filename)
+            else:
+                files = drive.list_files(args.folder_id)
+                for file in files:
+                    if FOLDER == file['mimeType']:
+                        print("folder:{id}\t{name}".format(**file))
+                    else:
+                        print("file:{id}\t{mimeType}\nfilename:{name}".format(**file))
+                        drive.download_file(file['id'], file['name'])
 
         elif "list" == args.action:
             files = drive.list_files(args.folder_id)
             for f in files:
-                print("{id}\t{name}".format(**f))
+                print("{id}\t{mimeType}\t{name}".format(**f))
