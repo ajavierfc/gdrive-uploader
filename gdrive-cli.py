@@ -25,6 +25,7 @@ args = parser.parse_args()
 
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/drive.metadata',
+          'https://www.googleapis.com/auth/drive.readonly',
           'https://www.googleapis.com/auth/drive.file']
 
 
